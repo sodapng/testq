@@ -2,8 +2,8 @@ import { request, gql } from 'graphql-request'
 import { useMemo, useState } from 'react'
 import { VirtuosoGrid } from 'react-virtuoso'
 import useSWR from 'swr'
-import { Checkbox } from './components/Checkbox/Checkbox'
-import { TextBold } from './components/TextBold'
+import { Checkbox, Loader, TextBold, VehicleCard } from './components'
+import { Vehicle } from './models'
 
 const BASE_URL = 'https://vortex.korabli.su/api/graphql/glossary/'
 
@@ -65,36 +65,6 @@ const shipClasses = [
 
 const levels = Array.from({ length: 11 }, (_, idx) => idx + 1)
 
-type Vehicle = {
-  icons: Pick<Icons, 'medium' | 'large'>
-  nation: NationVehicle
-  description: string
-  type: TypeVehicle
-  title: string
-  level: number
-  id: number
-}
-
-type Icons = {
-  default: string
-  medium: string
-  small: string
-  large: string
-}
-
-type TypeVehicle = {
-  icons: Pick<Icons, 'default'>
-  title: string
-  name: string
-}
-
-type NationVehicle = {
-  icons: Omit<Icons, 'default'>
-  color: string
-  title: string
-  name: string
-}
-
 export const App = () => {
   let { isLoading, data } = useSWR(document, (query) =>
     request<{ vehicles: Vehicle[] }>(BASE_URL, query)
@@ -107,15 +77,11 @@ export const App = () => {
   const filtredVehicles = useMemo(() => {
     return data?.vehicles.filter((vehicle) => {
       return (
-        (!valueLevel.length
-          ? true
-          : valueLevel.includes(String(vehicle.level))) &&
-        (!valueCountries.length
-          ? true
-          : valueCountries.includes(vehicle.nation.title)) &&
-        (!valueShipClasses.length
-          ? true
-          : valueShipClasses.includes(vehicle.type.title))
+        (!valueLevel.length || valueLevel.includes(String(vehicle.level))) &&
+        (!valueCountries.length ||
+          valueCountries.includes(vehicle.nation.title)) &&
+        (!valueShipClasses.length ||
+          valueShipClasses.includes(vehicle.type.title))
       )
     })
   }, [valueLevel, valueCountries, valueShipClasses, data])
@@ -123,7 +89,7 @@ export const App = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen container mx-auto px-4 py-2 grid place-items-center">
-        <span className="animate-spin inline-block w-7 h-7 rounded-full border-2 border-purple-300 border-t-transparent" />
+        <Loader />
       </div>
     )
   }
@@ -162,30 +128,7 @@ export const App = () => {
         </div>
       </div>
       <VirtuosoGrid
-        itemContent={(_idx, vehicle) => (
-          <div className="card bg-base-100 shadow-xl image-full h-full w-full">
-            <figure>
-              <img
-                src={vehicle.icons.medium}
-                alt={vehicle.title}
-                loading="lazy"
-              />
-            </figure>
-            <div className="card-body">
-              <h2 className="card-title">{vehicle.title}</h2>
-              <p className="">
-                {vehicle.type.title} • {vehicle.nation.title}
-              </p>
-              <p className="line-clamp-4">{vehicle.description}</p>
-              <div className="card-actions justify-end">
-                <button className="btn btn-primary">Read...</button>
-              </div>
-              <div className="absolute h-7 w-7 bg-base-100 rounded-full right-2 top-2 grid place-items-center">
-                <p className="">{vehicle.level}</p>
-              </div>
-            </div>
-          </div>
-        )}
+        itemContent={(_idx, vehicle) => <VehicleCard vehicle={vehicle} />}
         listClassName="grid grid-cols-3 gap-4"
         data={filtredVehicles}
         useWindowScroll
