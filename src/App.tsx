@@ -66,7 +66,7 @@ const shipClasses = [
 const levels = Array.from({ length: 11 }, (_, idx) => idx + 1)
 
 export const App = () => {
-  let { isLoading, data } = useSWR(document, (query) =>
+  const { isLoading, data } = useSWR(document, (query) =>
     request<{ vehicles: Vehicle[] }>(BASE_URL, query)
   )
 
